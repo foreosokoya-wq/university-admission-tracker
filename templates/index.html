@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Admission Tracker</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f7fa;
+            color: #202938;
+        }
+
+        header, .announcement {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .announcement {
+            border: 1px solid #e1e6ed;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .metadata {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .category {
+            display: inline-block;
+            background: #e8eefc;
+            padding: 5px 9px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        a {
+            color: #2459b3;
+        }
+
+        select, button {
+            padding: 9px;
+            margin-top: 8px;
+        }
+
+        .empty {
+            padding: 25px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .relevance {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .relevance.high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .relevance.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .relevance.uncertain {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>University Admission Tracker</h1>
+        <p>Admission announcements from AFIT.</p>
+
+        <form method="GET" action="/">
+            <label for="category">Filter by category:</label>
+
+            <select name="category" id="category">
+                <option value="">All categories</option>
+
+                {% for category in categories %}
+                    <option
+                        value="{{ category }}"
+                        {% if category == selected_category %}selected{% endif %}
+                    >
+                        {{ category.replace("_", " ") | title }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Filter</button>
+            <a href="/">Clear filter</a>
+        </form>
+        
+        <form method="GET" action="/">
+            <label for="university">Filter by university:</label>
+            <select name="university" id="university">
+                <option value="">All universities</option>
+                {% for code, details in universities.items() %}
+                    <option value="{{ code }}" {% if code == selected_uniersity %}selected{% endif %}>
+                        {{ details.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+
+        <form method="GET" action="/">
+            <label for="search">Search announcement titles:</label>
+
+            <input
+                type="text"
+                id="search"
+                name="q"
+                placeholder="e.g. screening, deadline..."
+                value="{{ search_query }}"
+            >
+
+            <button type="submit">Search</button>
+        </form>
+
+        <form method="POST" action="/refresh">
+            <button type="submit">Refresh Announcements</button>
+ 
+        </form>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+ 
+    <h2>Announcements ({{ announcements | length }})</h2>
+
+    {% if announcements %}
+        {% for item in announcements %}
+            <article class="announcement">
+                <h3>
+                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                        {{ item.title }}
+                    </a>
+                </h3>
+
+                <p>
+                    <span class="category">
+                        {{ (item.category or "unclassified").replace("_", " ") | title }}
+                    </span>
+                </p>
+
+                <p class="metadata">
+                    Relevance: 
+                    <span class="relevance {{ item.relevance or 'not classified' }}">
+                        {{ (item.relevance or "not classified") | title }}
+                    </span>
+                </p>
+
+                {% if item.published_at %}
+                    <p class="metadata">
+                        Published: {{ item.published_at }}
+                    </p>
+                {% endif %}
+
+                {% if item.reason %}
+                    <p class="metadata">
+                        Reason: {{ item.reason }}
+                    </p>
+                {% endif %}
+            </article>
+            {% else %}
+                <p>No announcements found. Try a different search term or clear your filters.</p>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No announcements found for this category.</p>
+    {% endif %}
+</body>
+</html>
