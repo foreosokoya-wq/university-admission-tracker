@@ -4,7 +4,7 @@ from update_tracker import update_tracker
 from universities import UNIVERSITIES
 
 app = Flask(__name__)
-app.secret_key = "secret-key"
+
 
 initialise_db()
 upgrade_db()
