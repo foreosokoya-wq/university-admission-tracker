@@ -3,192 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>University Admission Tracker</title>
+    <title>Admission Tracker — Nigerian University Updates</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-            background: #f5f7fa;
-            color: #202938;
-        }
-
-        header, .announcement {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-        }
-
-        .announcement {
-            border: 1px solid #e1e6ed;
-        }
-
-        h1 {
-            margin-top: 0;
-        }
-
-        .metadata {
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .category {
-            display: inline-block;
-            background: #e8eefc;
-            padding: 5px 9px;
-            border-radius: 5px;
-            font-size: 13px;
-        }
-
-        a {
-            color: #2459b3;
-        }
-
-        select, button {
-            padding: 9px;
-            margin-top: 8px;
-        }
-
-        .empty {
-            padding: 25px;
-            background: white;
-            border-radius: 10px;
-        }
-
-        .relevance {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .relevance.high {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .relevance.medium {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .relevance.uncertain {
-            background: #e2e8f0;
-            color: #334155;
-        }
-
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Space+Grotesk:wght@400..700&display=swap"
+        rel="stylesheet"
+    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tracker.css') }}">
 </head>
 
 <body>
-    <header>
-        <h1>University Admission Tracker</h1>
-        <p>Admission announcements from AFIT.</p>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <!-- Simple graduation-cap glyph -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </span>
+                <div>
+                    <h1 class="brand-title">Admission Tracker</h1>
+                    <p class="brand-subtitle">Nigerian university admission updates</p>
+                </div>
+            </div>
 
-        <form method="GET" action="/">
-            <label for="category">Filter by category:</label>
+            <nav class="quick-nav" aria-label="Quick filters">
+                <ul>
+                    <li><a href="/" class="{{ 'active' if not selected_category else '' }}">All updates</a></li>
+                    <li><a href="/?category=admission_list" class="{{ 'active' if selected_category == 'admission_list' else '' }}">Admission lists</a></li>
+                    <li><a href="/?category=deadline" class="{{ 'active' if selected_category == 'deadline' else '' }}">Deadlines</a></li>
+                    <li><a href="/?category=application" class="{{ 'active' if selected_category == 'application' else '' }}">Applications</a></li>
+                </ul>
+            </nav>
 
-            <select name="category" id="category">
-                <option value="">All categories</option>
-
-                {% for category in categories %}
-                    <option
-                        value="{{ category }}"
-                        {% if category == selected_category %}selected{% endif %}
-                    >
-                        {{ category.replace("_", " ") | title }}
-                    </option>
-                {% endfor %}
-            </select>
-
-            <button type="submit">Filter</button>
-            <a href="/">Clear filter</a>
-        </form>
-        
-        <form method="GET" action="/">
-            <label for="university">Filter by university:</label>
-            <select name="university" id="university">
-                <option value="">All universities</option>
-                {% for code, details in universities.items() %}
-                    <option value="{{ code }}" {% if code == selected_uniersity %}selected{% endif %}>
-                        {{ details.name }}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit">Filter</button>
-        </form>
-
-        <form method="GET" action="/">
-            <label for="search">Search announcement titles:</label>
-
-            <input
-                type="text"
-                id="search"
-                name="q"
-                placeholder="e.g. screening, deadline..."
-                value="{{ search_query }}"
-            >
-
-            <button type="submit">Search</button>
-        </form>
-
-        <form method="POST" action="/refresh">
-            <button type="submit">Refresh Announcements</button>
- 
-        </form>
+            <form method="POST" action="/refresh">
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                    Refresh
+                </button>
+            </form>
+        </div>
     </header>
 
-    {% with messages = get_flashed_messages() %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
- 
-    <h2>Announcements ({{ announcements | length }})</h2>
+    <main class="container page">
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <div class="flash" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
 
-    {% if announcements %}
-        {% for item in announcements %}
-            <article class="announcement">
-                <h3>
-                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
-                        {{ item.title }}
-                    </a>
-                </h3>
-
-                <p>
-                    <span class="category">
-                        {{ (item.category or "unclassified").replace("_", " ") | title }}
-                    </span>
-                </p>
-
-                <p class="metadata">
-                    Relevance: 
-                    <span class="relevance {{ item.relevance or 'not classified' }}">
-                        {{ (item.relevance or "not classified") | title }}
-                    </span>
-                </p>
-
-                {% if item.published_at %}
-                    <p class="metadata">
-                        Published: {{ item.published_at }}
-                    </p>
-                {% endif %}
-
-                {% if item.reason %}
-                    <p class="metadata">
-                        Reason: {{ item.reason }}
-                    </p>
-                {% endif %}
+        <!-- Summary cards -->
+        <section class="stat-grid" aria-label="Summary">
+            <article class="stat-card">
+                <span class="stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="10" rx="1"/><path d="M4 15v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 15V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/></svg>
+                </span>
+                <div>
+                    <p class="stat-value">{{ total_announcements }}</p>
+                    <p class="stat-label">Total announcements</p>
+                    <p class="stat-hint">Across all sources</p>
+                </div>
             </article>
+
+            <article class="stat-card">
+                <span class="stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                </span>
+                <div>
+                    <p class="stat-value">{{ admission_related_count }}</p>
+                    <p class="stat-label">Admission-related updates</p>
+                    <p class="stat-hint">Lists, screening, fees</p>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <span class="stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </span>
+                <div>
+                    <p class="stat-value">{{ deadline_count }}</p>
+                    <p class="stat-label">Deadlines</p>
+                    <p class="stat-hint">Time-sensitive notices</p>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <span class="stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+                </span>
+                <div>
+                    <p class="stat-value">{{ universities | length }}</p>
+                    <p class="stat-label">Universities tracked</p>
+                    <p class="stat-hint">{{ ready_scrapers }} scraper{% if ready_scrapers != 1 %}s{% endif %} marked ready</p>
+                </div>
+            </article>
+        </section>
+
+        <!-- Search + filters -->
+        <section class="filter-panel" aria-label="Filters">
+            <form method="GET" action="/" class="filter-form">
+                <div class="filter-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input
+                        type="search"
+                        id="search"
+                        name="q"
+                        value="{{ search_query }}"
+                        placeholder="Search announcement titles, e.g. screening, deadline…"
+                    >
+                </div>
+
+                <div class="filter-selects">
+                    <select name="university" aria-label="Filter by university">
+                        <option value="">All universities</option>
+                        {% for code, details in universities.items() %}
+                            <option value="{{ code }}" {% if code == selected_university %}selected{% endif %}>
+                                {{ details.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="category" aria-label="Filter by category">
+                        <option value="">All categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>
+                                {{ category.replace("_", " ") | title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit" class="btn btn-secondary">Apply filters</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Announcement list -->
+        <section aria-label="Announcements" class="list-section">
+            <div class="list-heading">
+                <h2>Announcements</h2>
+                <p>{{ announcements | length }} shown</p>
+            </div>
+
+            {% if announcements %}
+                <div class="announcement-list">
+                    {% for item in announcements %}
+                        <article class="announcement-card">
+                            <div class="announcement-main">
+                                <div class="badge-row">
+                                    <span class="badge badge-category">
+                                        {{ (item.category or "unclassified").replace("_", " ") | title }}
+                                    </span>
+                                    {% if item.relevance %}
+                                        <span class="badge badge-relevance {{ item.relevance }}">
+                                            {{ (item.relevance or "not classified") | title }} relevance
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <h3 class="announcement-title">
+                                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                                        {{ item.title }}
+                                    </a>
+                                </h3>
+
+                                <p class="announcement-university">
+                                    {{ universities[item.university].name if item.university in universities else item.university }}
+                                </p>
+
+                                {% if item.reason %}
+                                    <p class="announcement-reason">{{ item.reason }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="announcement-side">
+                                {% if item.published_at %}
+                                    <span class="announcement-date">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                                        {{ item.published_at }}
+                                    </span>
+                                {% endif %}
+                                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                                    View announcement
+                                </a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
             {% else %}
-                <p>No announcements found. Try a different search term or clear your filters.</p>
-        {% endfor %}
-    {% else %}
-        <p class="empty">No announcements found for this category.</p>
-    {% endif %}
+                <div class="empty-state">
+                    <h3>No announcements found</h3>
+                    <p>Try a different search term or clear your filters.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p class="container">
+            Data sourced from official university portals. Always confirm details on the
+            institution's website.
+        </p>
+    </footer>
 </body>
 </html>
